@@ -4,13 +4,11 @@ function logIn() {
 
     t = "\
         <div class = 'logIn'><br>\
-        <form action = 'http://192.168.222.128:9999' method = 'GET'>\
-            <input class = 'input' type = 'text' value = 'username' name = 'username' onclick = \"if(value == defaultValue) {value = ''; this.style.color = '#000';}\"></input>\
+            <input class = 'input' type = 'text' value = 'your id' name = 'user_id' id = 'user_id' onclick = \"if(value == defaultValue) {value = ''; this.style.color = '#000';}\"></input>\
             <br>\
-            <input class = 'input'  type = 'text' value = 'password' name = 'password' onclick = \"if(value == defaultValue) {value = ''; this.style.color = '#000';}\"></input>\
+            <input class = 'input' type = 'text' value = 'password' name = 'password' id = 'password' onclick = \"if(value == defaultValue) {value = ''; type = 'password'; this.style.color = '#000';}\"></input>\
             <br><br>\
             <button class='button submit' onmousedown='submit()'>Submit</button>\
-        </form>\
         </div>";
     $(".MainBox").append(t);
 }
@@ -21,18 +19,44 @@ function signUp() {
 
     t = "\
         <div class = 'signUp'><br>\
-        <form action = 'https://www.baidu.com' method = 'GET'>\
-            <input class = 'input' type = 'text' value = 'username' name = 'username' onclick = \"if(value == defaultValue) {value = ''; this.style.color = '#000';}\"></input>\
+            <input class = 'input' type = 'text' value = 'your name' name = 'username' id = 'username' onclick = \"if(value == defaultValue) {value = ''; this.style.color = '#000';}\"></input>\
             <br>\
-            <input class = 'input'  type = 'text' value = 'password' name = 'password' onclick = \"if(value == defaultValue) {value = ''; this.style.color = '#000';}\"></input>\
+            <input class = 'input' type = 'text' value = 'password' name = 'password' id = 'password' onclick = \"if(value == defaultValue) {value = ''; type = 'password'; this.style.color = '#000';}\"></input>\
             <br><br>\
             <button class='button submit' onmousedown='submit()'>Submit</button>\
-        </form>\
         </div>";
     $(".MainBox").append(t);
 }
 
 function submit() {
-    $(".signUp").remove();
-    $(".logIn").remove();
+    var $user_id = $("#user_id");
+    var $password = $("#password");
+
+    if ($user_id.val() == "" || 
+        $user_id.val() == "user_id" ||
+        $password.val() == "" ||
+        $password.val() == "password") {
+        return;
+    }
+    else {
+        $.ajax({
+            url : "http://192.168.222.128:9999/room.html",
+            type : "get",
+            data : {
+                action  : "login",
+                user_id: $user_id.val(),
+                password: $password.val()
+            },
+            success:function(result) {
+                if (result == "Wrong ID or password!") {
+                    alert(result);
+                } else {
+                    var newPage = window.open("about:blank", "_blank");
+                    newPage.document.write(result);
+                }
+            }
+        })
+    }
+
+
 }

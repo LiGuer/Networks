@@ -72,7 +72,6 @@ int main(int argc, char* argv[]) {
             else if (events[i].events & EPOLLIN) {
                 // a socket sends me some messages, reading it 
                 int connection_socket_fd = events[i].data.fd;
-
                 char buf[BUFFER_SIZE];
                 memset(buf, '\0', BUFFER_SIZE);
 
@@ -81,7 +80,6 @@ int main(int argc, char* argv[]) {
                     buf,
                     BUFFER_SIZE - 1, 0
                 );
-
                 users_data[connection_socket_fd]->buf = buf;
 
                 if (ret < 0) {
@@ -89,41 +87,26 @@ int main(int argc, char* argv[]) {
                         delete_connection_socket(events[i].data.fd, users_fd, users_data, epoll_fd);
                 }
                 else if (ret > 0) {
-                    string rev_str = users_data[connection_socket_fd]->buf;
-
                     printf("get %d bytes of client (%d) data: %s\n", ret, connection_socket_fd, users_data[connection_socket_fd]->buf.c_str());
 
                     threadPool.addTask(
-                        Networks::app_, 
+                        Networks::app_http, 
                         users_data[connection_socket_fd]->buf, 
                         connection_socket_fd, 
                         users_data[connection_socket_fd], 
-                        epoll_fd);
-                    printf(">>>> %s\n", users_data[connection_socket_fd]->buf.c_str());
+                        epoll_fd,
+                        m_mysql);
                 }
             }
             else if (events[i].events & EPOLLOUT) {
                 // Triggered by the writable event of the mass user
                 int connection_socket_fd = events[i].data.fd;
-                int cur = 0, n = users_data[connection_socket_fd]->buf.size();
-                printf(">> %s\n", users_data[connection_socket_fd]->buf.c_str());
-                while(cur < n) {
-                    string s = users_data[connection_socket_fd]->buf.substr(cur, min(n - cur, 65535));
 
-                    int ret = send(
-                        connection_socket_fd,
-                        s.c_str(),
-                        s.size(), 0
-                    );
-                    cur += 65535;
-                }
-
-                // Re-register the readable event and mask the read event on the current socket during the sending process
-                epoll_event event;
-                event.data.fd = connection_socket_fd;
-                event.events = EPOLLERR | EPOLLRDHUP;
-                event.events |= EPOLLIN;
-                epoll_ctl(epoll_fd, EPOLL_CTL_MOD, connection_socket_fd, &event);
+                Networks::send_message_(
+                    connection_socket_fd,
+                    users_data[connection_socket_fd],
+                    epoll_fd
+                );
             }
             else
                 printf("something else happend \n");

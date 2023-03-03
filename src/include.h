@@ -52,6 +52,20 @@ void string_split(string str, const string& splits, vector<string>& answer) {
         answer.push_back(str);
 }
 
+string& readFile (string url, string& ret) {
+    FILE *fin = fopen(url.c_str(), "r");
+
+    if(fin == NULL)
+        return ret = "";
+
+    char ch;
+    while ((ch = fgetc(fin)) != EOF) 
+        ret += ch;
+    fclose(fin);
+
+    return ret;
+}
+
 namespace Networks {
 
 struct ClientData {

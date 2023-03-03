@@ -20,7 +20,8 @@ struct HttpRequset {
         version = "HTTP/1.1",
         body = "";
 
-    vector<pair<string, string>> headerFields;
+    map<string, string> headerFields;
+    map<string, string> urlFields;
 };
 
 struct HttpResponse {
@@ -28,10 +29,9 @@ struct HttpResponse {
     
     string 
         version = "HTTP/1.1",
-        content_type = "text/plain",
         body = "";
 
-    vector<pair<string, string>> headerFields;
+    map<string, string> headerFields;
 };
 
 /*
@@ -52,13 +52,43 @@ HttpRequset& read(HttpRequset& hp, string& in) {
         hp.version = t[2];
     }
 
+    // url
+    {
+        int pos = hp.url.find('?');
+
+        if (pos != hp.url.npos) {
+
+            string addition = hp.url.substr(pos + 1), t = "";
+            pair<string, string> pt;
+            
+            for (auto& c : addition) {
+                if (c == '&' || c == '=') {
+                    if (c == '&') {
+                        pt.second = t;
+                        hp.urlFields[pt.first] = pt.second;
+                    } 
+                    else if(c == '=') 
+                        pt.first = t;
+
+                    t = "";
+                } else 
+                    t += c;
+            }
+
+            pt.second = t;
+            hp.urlFields[pt.first] = pt.second;
+
+            hp.url = hp.url.substr(0, pos);
+        }
+    }
+
     for (i = 1; i < requestList.size(); i++) {
         if (requestList[i].size() == 0)
             break;
 
         vector<string> t;
         string_split(requestList[i], ": ", t);
-        hp.headerFields.push_back({ t[0], t[1] });
+        hp.headerFields[t[0]] = t[1];
     }
 
     // body
@@ -90,7 +120,7 @@ HttpResponse& read(HttpResponse& hp, string& in) {
 
             vector<string> t;
             string_split(requestList[i], ": ", t);
-            hp.headerFields.push_back({ t[0], t[1] });
+            hp.headerFields[t[0]] = t[1];
         }
 
         // body
@@ -124,8 +154,7 @@ string to_string(HttpRequset& hp) {
 string to_string(HttpResponse& hp) {
     string responseLine = hp.version + " " + std::to_string(hp.status) + " " + "" + "\r\n";
 
-    hp.headerFields.push_back({"Content-type", hp.content_type});
-    hp.headerFields.push_back({"Content-length", std::to_string(hp.body.size())});
+    hp.headerFields["Content-length"] = std::to_string(hp.body.size());
 
     string headerFieldsResult;
     for (auto& e : hp.headerFields) {

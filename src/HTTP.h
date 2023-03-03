@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 #include "HTTP_message.h"
 
 using namespace std;
@@ -12,6 +13,8 @@ using namespace std;
 namespace HTTP {
 
 inline string url_process(string url) {
+    int pos = url.find('?');
+
     if (url == "/")
         url = "../html/index.html";
     else 
@@ -125,14 +128,8 @@ inline string http(string in) {
 
     read(hq, in);
     string url = url_process(hq.url);
-    hs.content_type = file_type(url);
-
-    // read files
-    FILE *fin = fopen(url.c_str(), "r");
-    char ch;
-    while ((ch = fgetc(fin)) != EOF) 
-        hs.body += ch;
-    fclose(fin);
+    hs.headerFields["Content-type"] = file_type(url);
+    readFile(url, hs.body);
 
     return to_string(hs);
 }

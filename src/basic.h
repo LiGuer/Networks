@@ -122,6 +122,33 @@ namespace Networks {
         epoll_ctl(epoll_fd, EPOLL_CTL_MOD, socket_fd, &event);
     }
 
+    void send_message(int connection_socket_fd, Networks::ClientData* user) {
+        int cur = 0, 
+            n = user->buf.size();
+
+        while(cur < n) {
+            string s = user->buf.substr(cur, min(n - cur, 65535));
+
+            int ret = send(
+                connection_socket_fd,
+                s.c_str(),
+                s.size(), 0
+            );
+            cur += 65535;
+        }
+    }
+
+    void send_message_(int connection_socket_fd, Networks::ClientData* user, int epoll_fd) {
+        send_message(connection_socket_fd, user);
+
+        // Re-register the readable event and mask the read event on the current socket during the sending process
+        epoll_event event;
+        event.data.fd = connection_socket_fd;
+        event.events = EPOLLERR | EPOLLRDHUP;
+        event.events |= EPOLLIN;
+        epoll_ctl(epoll_fd, EPOLL_CTL_MOD, connection_socket_fd, &event);
+    }
+
     void group_message_epoll(string& message, vector<int>& socket_fds,
                              map<int, Networks::ClientData*>& users, int epoll_fd) {
         int user_count = socket_fds.size();

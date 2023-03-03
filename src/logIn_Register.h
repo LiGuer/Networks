@@ -82,41 +82,5 @@ namespace Networks {
         }
         return true;
     }
-
-
-    void log_in(MYSQL& com_mysql, int connection_socket_fd, int epollfd, Networks::ClientData& user) {
-
-        string 
-            id_key = user.buf, 
-            name, 
-            message;
-        vector<string> id_key_vector;
-        int id = 0;
-        long long key;
-
-        string_split(id_key, " ", id_key_vector);
-
-        for (int i = 0; i < id_key_vector.size(); i++) {
-            if (id == 0 &&
-                id_key_vector[i].size() != 0) {
-                id = atoi(id_key_vector[i].c_str());
-            }
-            else if (id_key_vector[i].size() != 0) {
-                key = atoi(id_key_vector[i].c_str());
-                break;
-            }
-        }
-
-        if (Networks::check_user_key(com_mysql, id, key, name)) {
-            user.id = id;
-            message = "Welcome back, " + name + "!\n";
-        }
-        else {
-            message = "Wrong ID or KEY!\n";
-        }
-        user.buf = message;
-        Networks::send_message_epoll(connection_socket_fd, epollfd);
-    }
-
 }
 #endif
