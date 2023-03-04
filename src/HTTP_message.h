@@ -37,7 +37,7 @@ struct HttpResponse {
 /*
  *  analysis message
  */
-HttpRequset& read(HttpRequset& hp, string& in) {
+HttpRequset& read(HttpRequset& hr, string& in) {
     vector<string> requestList;
 
     string_split(in, "\r\n", requestList);
@@ -47,25 +47,25 @@ HttpRequset& read(HttpRequset& hp, string& in) {
         vector<string> t;
         string_split(requestList[i], " ", t);
 
-        hp.method = t[0];
-        hp.url = t[1];
-        hp.version = t[2];
+        hr.method = t[0];
+        hr.url = t[1];
+        hr.version = t[2];
     }
 
     // url
     {
-        int pos = hp.url.find('?');
+        int pos = hr.url.find('?');
 
-        if (pos != hp.url.npos) {
+        if (pos != hr.url.npos) {
 
-            string addition = hp.url.substr(pos + 1), t = "";
+            string addition = hr.url.substr(pos + 1), t = "";
             pair<string, string> pt;
             
             for (auto& c : addition) {
                 if (c == '&' || c == '=') {
                     if (c == '&') {
                         pt.second = t;
-                        hp.urlFields[pt.first] = pt.second;
+                        hr.urlFields[pt.first] = pt.second;
                     } 
                     else if(c == '=') 
                         pt.first = t;
@@ -76,9 +76,9 @@ HttpRequset& read(HttpRequset& hp, string& in) {
             }
 
             pt.second = t;
-            hp.urlFields[pt.first] = pt.second;
+            hr.urlFields[pt.first] = pt.second;
 
-            hp.url = hp.url.substr(0, pos);
+            hr.url = hr.url.substr(0, pos);
         }
     }
 
@@ -88,15 +88,40 @@ HttpRequset& read(HttpRequset& hp, string& in) {
 
         vector<string> t;
         string_split(requestList[i], ": ", t);
-        hp.headerFields[t[0]] = t[1];
+        hr.headerFields[t[0]] = t[1];
     }
 
     // body
     i++;
     for (; i < requestList.size(); i++) {
-        hp.body += requestList[i];
+        hr.body += requestList[i];
     }
-    return hp;
+    
+    if (hr.method == "POST") {
+        string t = "";
+        pair<string, string> pt;
+        
+        for (auto& c : hr.body) {
+            
+            if (c == '&' || c == '=') {
+                if (c == '&') {
+                    pt.second = t;
+                    hr.urlFields[pt.first] = pt.second;
+                } 
+                else if(c == '=') 
+                    pt.first = t;
+
+                t = "";
+            } else 
+                t += c;
+        }
+
+        pt.second = t;
+        hr.urlFields[pt.first] = pt.second;
+
+    }
+
+    return hr;
 }
 
 HttpResponse& read(HttpResponse& hp, string& in) {
